@@ -89,7 +89,22 @@ func create_GRAPH() Graph {
 		}
 	}
 
-	return Graph{}
+	g.pheromones = make(map[City]map[City]float64)
+
+	for _, from := range g.cities {
+		g.pheromones[from] = make(map[City]float64)
+
+		for _, to := range g.cities {
+			g.pheromones[from][to] = rand.Float64()
+			if from == to {
+				g.pheromones[from][to] = 9.99
+			}
+
+		}
+
+	}
+
+	return g
 }
 
 func create_ANT(grafo Graph) Ant {
@@ -115,5 +130,18 @@ func create_ACO(grafo Graph, num_ants int, alpha, beta, evaporation, constatQ fl
 }
 
 func main() {
+	var alpha float64 = 0.5
+	var beta float64 = 0.5
+	var evaporation float64 = 0.5
+	var constatQ float64 = 0.5
+	var iteretions int = 10
+	var ants int = 5
 
+	g := create_GRAPH()
+	println("Loaded cities:", len(g.cities))
+
+	aco := create_ACO(g, ants, alpha, beta, evaporation, constatQ, iteretions)
+	for i := 0; i < ants; i++ {
+		println(aco.ants[i].start_city.ID)
+	}
 }
