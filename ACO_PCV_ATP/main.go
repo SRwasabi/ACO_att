@@ -8,7 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
+	// "time"
 )
 
 // ================================================================================
@@ -42,8 +42,9 @@ type ACO struct {
 	constatQ    float64
 	iterations  int
 
-	bestPath []int
-	bestCost float64
+	bestPath 	[]int
+	bestCost 	float64
+	rng 		*rand.Rand
 }
 
 //================================================================================
@@ -118,9 +119,9 @@ func create_GRAPH() Graph {
 	return g
 }
 
-func create_ANT(grafo *Graph) Ant {
+func create_ANT(grafo *Graph, rng *rand.Rand) Ant {
     n := len(grafo.cities)
-    start := rand.Intn(n)
+    start := rng.Intn(n)
 
     return Ant{
         start: start,
@@ -130,9 +131,11 @@ func create_ANT(grafo *Graph) Ant {
 }
 
 func create_ACO(grafo *Graph, num_ants int, alpha, beta, evaporation, constatQ float64, iterations int) ACO {
+	rng := rand.New(rand.NewSource(1))
+
 	ants := make([]Ant, num_ants)
 	for i := 0; i < num_ants; i++ {
-		ants[i] = create_ANT(grafo)
+		ants[i] = create_ANT(grafo, rng)
 	}
 
 	return ACO{
@@ -144,8 +147,10 @@ func create_ACO(grafo *Graph, num_ants int, alpha, beta, evaporation, constatQ f
 		constatQ:    constatQ,
 		iterations:  iterations,
 		bestCost:    math.Inf(1),
+		rng:         rng,
 	}
 }
+
 
 func distance(a, b City) float64 {
 	dx := a.X - b.X
@@ -154,8 +159,6 @@ func distance(a, b City) float64 {
 }
 
 func main() {
-	rand.Seed(time.Now().UnixNano())
-
 	var alpha float64 = 0.5
 	var beta float64 = 0.5
 	var evaporation float64 = 0.5
