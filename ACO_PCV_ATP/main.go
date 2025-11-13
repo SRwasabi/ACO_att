@@ -3,10 +3,12 @@ package main
 // imports ================================================================================
 import (
 	"bufio"
+	"math"
 	"math/rand"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // ================================================================================
@@ -18,8 +20,9 @@ type City struct {
 }
 
 type Graph struct {
-	cities     []City
-	pheromones map[City]map[City]float64
+	cities			[]City
+	cities_distance	[][]float64
+	pheromones		[][]float64
 }
 
 // ================================================================================
@@ -31,13 +34,16 @@ type Ant struct {
 }
 
 type ACO struct {
-	grafo       Graph
+	grafo       *Graph
 	ants        []Ant
 	alpha       float64
 	beta        float64
 	evaporation float64
 	constatQ    float64
 	iterations  int
+
+	bestPath []int
+	bestCost float64
 }
 
 //================================================================================
@@ -85,34 +91,43 @@ func create_GRAPH() Graph {
 			y, _ := strconv.ParseFloat(fields[2], 64)
 			city := create_CITY(id, x, y)
 			g.cities = append(g.cities, city)
-
 		}
 	}
 
-	g.pheromones = make(map[City]map[City]float64)
+	// Inicializa as matrizes de distancia e feromonio
+	cities_qtty := len(g.cities)
+	g.cities_distance = make([][]float64, cities_qtty)
+	g.pheromones = make([][]float64, cities_qtty)
 
-	for _, from := range g.cities {
-		g.pheromones[from] = make(map[City]float64)
+	for from := 0; from < cities_qtty; from++ {
+		g.cities_distance[from] = make([]float64, cities_qtty)
+		g.pheromones[from] = make([]float64, cities_qtty)
 
-		for _, to := range g.cities {
-			g.pheromones[from][to] = rand.Float64()
+		for to := 0; to < cities_qtty; to++ {
 			if from == to {
-				g.pheromones[from][to] = 9.99
+				g.cities_distance[from][to] = 9999999.0
+			} else {
+				g.cities_distance[from][to] = distance(g.cities[from], g.cities[to])
 			}
 
+			// feromonio inicial: 1.0 pra todas as arestas
+			g.pheromones[from][to] = 1.0
 		}
-
 	}
 
 	return g
 }
 
-func create_ANT(grafo Graph) Ant {
+func create_ANT(grafo *Graph) Ant {
 	start_city := grafo.cities[rand.Intn(len(grafo.cities))]
-	return Ant{start_city: start_city, path: []City{start_city}, cost: 0.0}
+	return Ant{
+		start_city: start_city,
+		path:       []City{start_city},
+		cost:       0.0,
+	}
 }
 
-func create_ACO(grafo Graph, num_ants int, alpha, beta, evaporation, constatQ float64, iterations int) ACO {
+func create_ACO(grafo *Graph, num_ants int, alpha, beta, evaporation, constatQ float64, iterations int) ACO {
 	ants := make([]Ant, num_ants)
 	for i := 0; i < num_ants; i++ {
 		ants[i] = create_ANT(grafo)
@@ -126,10 +141,19 @@ func create_ACO(grafo Graph, num_ants int, alpha, beta, evaporation, constatQ fl
 		evaporation: evaporation,
 		constatQ:    constatQ,
 		iterations:  iterations,
+		bestCost:    math.Inf(1),
 	}
 }
 
+func distance(a, b City) float64 {
+	dx := a.X - b.X
+	dy := a.Y - b.Y
+	return math.Sqrt(dx*dx + dy*dy)
+}
+
 func main() {
+	rand.Seed(time.Now().UnixNano())
+
 	var alpha float64 = 0.5
 	var beta float64 = 0.5
 	var evaporation float64 = 0.5
@@ -140,7 +164,8 @@ func main() {
 	g := create_GRAPH()
 	println("Loaded cities:", len(g.cities))
 
-	aco := create_ACO(g, ants, alpha, beta, evaporation, constatQ, iteretions)
+	aco := create_ACO(&g, ants, alpha, beta, evaporation, constatQ, iteretions)
+
 	for i := 0; i < ants; i++ {
 		println(aco.ants[i].start_city.ID)
 	}
