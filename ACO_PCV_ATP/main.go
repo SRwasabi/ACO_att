@@ -28,8 +28,8 @@ type Graph struct {
 // ================================================================================
 // Ant Colony Optimization (ACO) =====================================================
 type Ant struct {
-	start_city City
-	path       []City
+	start		int
+	path       []int
 	cost       float64
 }
 
@@ -119,12 +119,14 @@ func create_GRAPH() Graph {
 }
 
 func create_ANT(grafo *Graph) Ant {
-	start_city := grafo.cities[rand.Intn(len(grafo.cities))]
-	return Ant{
-		start_city: start_city,
-		path:       []City{start_city},
-		cost:       0.0,
-	}
+    n := len(grafo.cities)
+    start := rand.Intn(n)
+
+    return Ant{
+        start: start,
+        path:  []int{start},
+        cost:  0.0,
+    }
 }
 
 func create_ACO(grafo *Graph, num_ants int, alpha, beta, evaporation, constatQ float64, iterations int) ACO {
@@ -167,6 +169,9 @@ func main() {
 	aco := create_ACO(&g, ants, alpha, beta, evaporation, constatQ, iteretions)
 
 	for i := 0; i < ants; i++ {
-		println(aco.ants[i].start_city.ID)
+		startIdx := aco.ants[i].start
+		cityID := g.cities[startIdx].ID
+		println("Ant", i, "start city ID:", cityID)
 	}
+
 }
