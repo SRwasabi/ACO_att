@@ -81,7 +81,7 @@ func CreateGRAPH() Graph {
 		g.Cities_distance[from] = make([]float64, cities_qtty)
 		g.Pheromones[from] = make([]float64, cities_qtty)
 
-		for to := 0; to < cities_qtty; to++ {
+		for to := 0; to < (cities_qtty); to++ {
 			if from == to {
 				g.Cities_distance[from][to] = 0.0
 			} else {
@@ -89,7 +89,9 @@ func CreateGRAPH() Graph {
 			}
 
 			// feromonio inicial: aleatorio entre 0 e 1
+			// a -> b precisa ter o mesmo pheromonio que b -> a
 			g.Pheromones[from][to] = rand.Float64()
+
 		}
 	}
 
