@@ -1,5 +1,9 @@
 package main
 
+import (
+	"github.com/SRwasabi/ACO_att/aco"
+)
+
 func main() {
 	var alpha float64 = 0.5
 	var beta float64 = 0.5
@@ -8,14 +12,14 @@ func main() {
 	var iteretions int = 10
 	var ants int = 5
 
-	g := create_GRAPH()
-	println("Loaded cities:", len(g.cities))
+	g := aco.CreateGRAPH()
+	println("Loaded Cities:", len(g.Cities))
 
-	aco := create_ACO(&g, ants, alpha, beta, evaporation, constatQ, iteretions)
+	aco := aco.CreateACO(&g, ants, alpha, beta, evaporation, constatQ, iteretions)
 
 	for i := 0; i < ants; i++ {
-		startIdx := aco.ants[i].start
-		cityID := g.cities[startIdx].ID
+		startIdx := aco.Ants[i].Start
+		cityID := g.Cities[startIdx].ID
 		println("Ant", i, "start city ID:", cityID)
 	}
 
