@@ -2,6 +2,8 @@ package main
 
 import (
 	"github.com/SRwasabi/ACO_att/aco"
+	"math/rand"
+	// "time"
 )
 
 func main() {
@@ -11,26 +13,15 @@ func main() {
 	var constatQ float64 = 0.5
 	var iteretions int = 10
 	var ants int = 5
+	// Rng := rand.NewSource(time.Now().UnixNano())
+	Rng := rand.New(rand.NewSource(1))
 
-	g := aco.CreateGRAPH()
+	g := aco.CreateGRAPH(Rng)
 	println("Loaded Cities:", len(g.Cities))
 
-	colony := aco.CreateACO(&g, ants, alpha, beta, evaporation, constatQ, iteretions)
+	colony := aco.CreateACO(g, ants, alpha, beta, evaporation, constatQ, iteretions, Rng)
+	colony.Run()
 
-	for i := 0; i < ants; i++ {
-		startIdx := colony.Ants[i].Start
-		cityID := g.Cities[startIdx].ID
-		println("Ant", i, "start city ID:", cityID)
-	}
 
-	for i := 0; i < iteretions; i++ {
-		for f := 0; f < ants; f++ {
-			print("Iteration:", i, " Ant:", f, "\n")
-			for c := 0; c < len(g.Cities); c++ {
-				aco.NextCITY(&colony.Ants[f], &colony)
-			}
-		}
-		aco.PathCOST(&colony)
-		aco.UpdatePheromones(&colony)
-	}
+
 }

@@ -1,167 +1,194 @@
 package aco
 
-// imports ================================================================================
 import (
 	"fmt"
 	"math"
-	"math/rand"
 )
 
-// ================================================================================
-// Ant Colony Optimization (ACO) =====================================================
-type Ant struct {
-	Start         int
-	Path          []int
-	Cost          float64
-	Actual        int
-	Qtd_pheromone float64
-}
-
-type ACO struct {
-	Grafo       *Graph
-	Ants        []Ant
-	Alpha       float64
-	Beta        float64
-	Evaporation float64
-	ConstatQ    float64
-	Iterations  int
-
-	BestPath []int
-	BestCost float64
-	Rng      *rand.Rand
-}
-
-//================================================================================
-
-func create_ANT(Grafo *Graph, Rng *rand.Rand) Ant {
-	n := len(Grafo.Cities)
-	Start := Rng.Intn(n)
-
-	return Ant{
-		Start:         Start,
-		Path:          []int{Start},
-		Cost:          0.0,
-		Actual:        Start,
-		Qtd_pheromone: 0.0,
-	}
-}
-
-func CreateACO(Grafo *Graph, num_Ants int, Alpha, Beta, Evaporation, ConstatQ float64, Iterations int) ACO {
-	Rng := rand.New(rand.NewSource(1))
-
-	Ants := make([]Ant, num_Ants)
-	for i := 0; i < num_Ants; i++ {
-		Ants[i] = create_ANT(Grafo, Rng)
-	}
-
-	return ACO{
-		Grafo:       Grafo,
-		Ants:        Ants,
-		Alpha:       Alpha,
-		Beta:        Beta,
-		Evaporation: Evaporation,
-		ConstatQ:    ConstatQ,
-		Iterations:  Iterations,
-		BestCost:    math.Inf(1),
-		Rng:         Rng,
-	}
-}
-
-func distance(a, b City) float64 {
-	dx := a.X - b.X
-	dy := a.Y - b.Y
-	return math.Sqrt(dx*dx + dy*dy)
-}
+// ===================== Escolha da próxima cidade ==============================
 
 func NextCITY(ant *Ant, aco *ACO) {
-	prob := 0.0
-	sum := 0.0
-	index := -1
-	visited := make(map[int]bool)
+	nextIndex := selectNextCity(ant, aco)
+	if nextIndex == -1 {
+		return
+	}
+	moveAntToCity(ant, nextIndex)
+}
 
-	//map para ver se a cidade já foi visitada
-	for _, city := range ant.Path {
-		visited[city] = true
+func selectNextCity(ant *Ant, aco *ACO) int {
+	desirabilities := computeDesirabilities(ant, aco)
+	total := sum(desirabilities)
+	if total == 0 {
+		return -1
 	}
 
-	for to := 0; to < len(aco.Grafo.Cities); to++ {
-		if !visited[to] {
-			sum += math.Pow((1/aco.Grafo.Cities_distance[ant.Actual][to]), aco.Alpha) * math.Pow(aco.Grafo.Pheromones[ant.Actual][to], aco.Beta)
+	bestIndex := -1
+	bestProb := -1.0
+
+	for city, desirability := range desirabilities {
+		if desirability == 0 {
+			continue
+		}
+		prob := desirability / total
+		if prob > bestProb {
+			bestProb = prob
+			bestIndex = city
 		}
 	}
 
-	for to := 0; to < len(aco.Grafo.Cities); to++ {
-		if !visited[to] {
-			if prob == 0.0 {
+	return bestIndex
+}
 
-				prob = math.Pow((1/aco.Grafo.Cities_distance[ant.Actual][to]), aco.Alpha) * math.Pow(aco.Grafo.Pheromones[ant.Actual][to], aco.Beta) / sum
-				index = to
-			} else {
-				aux := math.Pow((1/aco.Grafo.Cities_distance[ant.Actual][to]), aco.Alpha) * math.Pow(aco.Grafo.Pheromones[ant.Actual][to], aco.Beta) / sum
-				if aux > prob {
-					prob = aux
-					index = to
-				}
-			}
+func computeDesirabilities(ant *Ant, aco *ACO) []float64 {
+	n := len(aco.Grafo.Cities)
+	desirabilities := make([]float64, n)
+
+	for to := 0; to < n; to++ {
+		if ant.Visited[to] || to == ant.Actual {
+			continue
 		}
+		desirabilities[to] = transitionDesirability(ant.Actual, to, aco)
 	}
 
-	if !(index == -1) {
-		ant.Path = append(ant.Path, index)
-		ant.Actual = index
+	return desirabilities
+}
+
+func transitionDesirability(from, to int, aco *ACO) float64 {
+	dist := aco.Grafo.Cities_distance[from][to]
+	if dist <= 0 {
+		return 0
 	}
+
+	visibility := 1.0 / dist
+	pheromone := aco.Grafo.Pheromones[from][to]
+
+	return math.Pow(visibility, aco.Alpha) * math.Pow(pheromone, aco.Beta)
+}
+
+func moveAntToCity(ant *Ant, cityIndex int) {
+	ant.Path = append(ant.Path, cityIndex)
+	ant.Actual = cityIndex
+	ant.Visited[cityIndex] = true
+}
+
+func sum(values []float64) float64 {
+	total := 0.0
+	for _, v := range values {
+		total += v
+	}
+	return total
 }
 
 func PathCOST(aco *ACO) {
+	for i := range aco.Ants {
+		ant := &aco.Ants[i]
 
-	for a := 0; a < len(aco.Ants); a++ {
-		aco.Ants[a].Cost = 0.0
-		for c := 0; c < len(aco.Ants[a].Path); c++ {
-			if c == len(aco.Ants[a].Path)-1 {
-				aco.Ants[a].Cost += aco.Grafo.Cities_distance[aco.Ants[a].Path[c]][aco.Ants[a].Path[0]]
-			} else {
-				aco.Ants[a].Cost += aco.Grafo.Cities_distance[aco.Ants[a].Path[c]][aco.Ants[a].Path[c+1]]
-			}
-		}
+		ant.Cost = computePathCost(ant.Path, aco.Grafo.Cities_distance)
+		ant.Qtd_pheromone = pheromoneAmount(aco.ConstatQ, ant.Cost)
 
-		aco.Ants[a].Qtd_pheromone = aco.ConstatQ / aco.Ants[a].Cost
-		print("Formiga ", a)
-		fmt.Printf(" Custo do caminho da formiga: %.2f \n", aco.Ants[a].Cost)
-		if aco.Ants[a].Cost < aco.BestCost {
-			aco.BestCost = aco.Ants[a].Cost
-			aco.BestPath = make([]int, len(aco.Ants[a].Path))
-			copy(aco.BestPath, aco.Ants[a].Path)
-		}
+		logAntCost(i, ant.Cost)
+		updateBestSolution(aco, ant)
 	}
 
-	for i := 0; i < len(aco.BestPath); i++ {
-		print(" ", aco.BestPath[i])
-	}
-	fmt.Printf("\nMelhor custo até agora: %.2f\n", aco.BestCost)
+	logBestSolution(aco.BestPath, aco.BestCost)
+}
 
+func computePathCost(path []int, distances [][]float64) float64 {
+	if len(path) == 0 {
+		return 0
+	}
+
+	total := 0.0
+	for i := 0; i < len(path); i++ {
+		from := path[i]
+		to := path[(i+1)%len(path)] // último volta para o primeiro
+		total += distances[from][to]
+	}
+
+	return total
+}
+
+func pheromoneAmount(Q, cost float64) float64 {
+	if cost == 0 {
+		return 0
+	}
+	return Q / cost
+}
+
+func updateBestSolution(aco *ACO, ant *Ant) {
+	if ant.Cost >= aco.BestCost {
+		return
+	}
+
+	aco.BestCost = ant.Cost
+	aco.BestPath = make([]int, len(ant.Path))
+	copy(aco.BestPath, ant.Path)
+}
+
+func logAntCost(index int, cost float64) {
+	fmt.Printf("Formiga %d - Custo do caminho: %.2f\n", index, cost)
+}
+
+func logBestSolution(bestPath []int, bestCost float64) {
+	fmt.Print("Melhor caminho até agora: ")
+	for _, city := range bestPath {
+		fmt.Printf("%d ", city)
+	}
+	fmt.Printf("\nMelhor custo até agora: %.2f\n", bestCost)
 }
 
 func UpdatePheromones(aco *ACO) {
-	for from := 0; from < len(aco.Grafo.Pheromones); from++ {
-		for to := 0; to < len(aco.Grafo.Pheromones); to++ {
-			if from != to {
-				aco.Grafo.Pheromones[from][to] *= (1 - aco.Evaporation)
+	evaporatePheromones(aco)
+	reinforceBestPath(aco)
+}
+
+func evaporatePheromones(aco *ACO) {
+	factor := 1 - aco.Evaporation
+
+	for i := range aco.Grafo.Pheromones {
+		for j := range aco.Grafo.Pheromones[i] {
+			if i == j {
+				continue
 			}
+			aco.Grafo.Pheromones[i][j] *= factor
+		}
+	}
+}
+
+func reinforceBestPath(aco *ACO) {
+	if len(aco.BestPath) < 2 {
+		return
+	}
+
+	for k := 0; k < len(aco.BestPath)-1; k++ {
+		fromCity := aco.BestPath[k]
+		toCity := aco.BestPath[k+1]
+
+		amount := allPheromoneAmountToDeposite(aco, fromCity, toCity)
+
+		aco.Grafo.Pheromones[fromCity][toCity] += amount
+		aco.Grafo.Pheromones[toCity][fromCity] += amount
+	}
+}
+
+func allPheromoneAmountToDeposite(aco *ACO, fromCity, toCity int) float64 {
+	delta := 0.0
+
+	for i := range aco.Ants {
+		ant := &aco.Ants[i]
+		if antUsesEdge(ant.Path, fromCity, toCity) {
+			delta += ant.Qtd_pheromone
 		}
 	}
 
-	for path := 0; path < len(aco.BestPath); path++ {
-		if path < (len(aco.BestPath) - 1) {
-			for a := 0; a < len(aco.Ants); a++ {
-				for c := 0; c < len(aco.Ants[a].Path); c++ {
-					if c < (len(aco.Ants[a].Path) - 1) {
-						if aco.Ants[a].Path[c] == aco.BestPath[path] && aco.Ants[a].Path[c+1] == aco.BestPath[path+1] {
-							aco.Grafo.Pheromones[path][path+1] += aco.Ants[a].Qtd_pheromone
-							aco.Grafo.Pheromones[path+1][path] += aco.Ants[a].Qtd_pheromone
-						}
-					}
-				}
-			}
+	return delta
+}
+
+func antUsesEdge(path []int, fromCity, toCity int) bool {
+	for i := 0; i < len(path)-1; i++ {
+		if path[i] == fromCity && path[i+1] == toCity {
+			return true
 		}
 	}
+	return false
 }
