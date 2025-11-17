@@ -17,7 +17,10 @@ func NextCITY(ant *Ant, aco *ACO) {
 
 func selectNextCity(ant *Ant, aco *ACO) int {
 	desirabilities := computeDesirabilities(ant, aco)
+	//Checar isso aqui
+	fmt.Printf("\n\nDesirabilities:  %.5f", desirabilities)
 	total := sum(desirabilities)
+	fmt.Printf("  Total Desirabilities:  %.5f", total)
 	if total == 0 {
 		return -1
 	}
@@ -80,6 +83,7 @@ func sum(values []float64) float64 {
 }
 
 func PathCOST(aco *ACO) {
+	aco.BestCost = -1
 	for i := range aco.Ants {
 		ant := &aco.Ants[i]
 
@@ -116,7 +120,7 @@ func pheromoneAmount(Q, cost float64) float64 {
 }
 
 func updateBestSolution(aco *ACO, ant *Ant) {
-	if ant.Cost >= aco.BestCost {
+	if (ant.Cost >= aco.BestCost) && (aco.BestCost != -1) {
 		return
 	}
 

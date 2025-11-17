@@ -14,11 +14,11 @@ type ACO struct {
 	ConstatQ    float64
 	Iterations  int
 
-	BestPath []int
-	BestCost float64
-	Rng      *rand.Rand
+	BestPath        []int
+	BestCost        float64
+	BestCostHistory []float64
+	Rng             *rand.Rand
 }
-
 
 func CreateACO(Grafo *Graph, num_Ants int, Alpha, Beta, Evaporation, ConstatQ float64, Iterations int, Rng *rand.Rand) ACO {
 	Ants := make([]Ant, num_Ants)
@@ -27,15 +27,16 @@ func CreateACO(Grafo *Graph, num_Ants int, Alpha, Beta, Evaporation, ConstatQ fl
 	}
 
 	return ACO{
-		Grafo:       Grafo,
-		Ants:        Ants,
-		Alpha:       Alpha,
-		Beta:        Beta,
-		Evaporation: Evaporation,
-		ConstatQ:    ConstatQ,
-		Iterations:  Iterations,
-		BestCost:    math.Inf(1),
-		Rng:         Rng,
+		Grafo:           Grafo,
+		Ants:            Ants,
+		Alpha:           Alpha,
+		Beta:            Beta,
+		Evaporation:     Evaporation,
+		ConstatQ:        ConstatQ,
+		Iterations:      Iterations,
+		BestCost:        math.Inf(1),
+		BestCostHistory: make([]float64, 0, Iterations),
+		Rng:             Rng,
 	}
 }
 
@@ -43,8 +44,10 @@ func (aco *ACO) Run() {
 	for iter := 0; iter < aco.Iterations; iter++ {
 		aco.resetAnts()
 		aco.constructSolutions()
+
 		PathCOST(aco)
 		UpdatePheromones(aco)
+		aco.BestCostHistory = append(aco.BestCostHistory, aco.BestCost)
 	}
 }
 
