@@ -23,7 +23,7 @@ type Graph struct {
 //================================================================================
 
 func CreateGRAPH(Rng *rand.Rand) *Graph {
-	const tspFilePath = "coordinates/wi29.tsp"
+	const tspFilePath = "coordinates/uy734.tsp"
 
 	cities := loadCitiesFromTSP(tspFilePath)
 	distances := buildDistanceMatrix(cities)

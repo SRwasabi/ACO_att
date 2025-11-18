@@ -1,9 +1,13 @@
 package aco
 
 import (
+	"fmt"
 	"math"
 	"math/rand"
+	"strings"
+	"sync"
 )
+
 
 type ACO struct {
 	Grafo       *Graph
@@ -41,15 +45,33 @@ func CreateACO(Grafo *Graph, num_Ants int, Alpha, Beta, Evaporation, ConstatQ fl
 }
 
 func (aco *ACO) Run() {
-	for iter := 0; iter < aco.Iterations; iter++ {
-		aco.resetAnts()
-		aco.constructSolutions()
+    barWidth := 50
 
-		PathCOST(aco)
-		UpdatePheromones(aco)
-		aco.BestCostHistory = append(aco.BestCostHistory, aco.BestCost)
-	}
+    targetUpdates := aco.Iterations
+
+    step := aco.Iterations / targetUpdates
+	fmt.Printf("Updating Progress bar at each %d iterations:\n", step)
+    if step <= 0 {
+        step = 1
+    }
+
+    for iter := 0; iter < aco.Iterations; iter++ {
+        aco.resetAnts()
+        aco.constructSolutions()
+
+        PathCOST(aco)
+        UpdatePheromones(aco)
+        aco.BestCostHistory = append(aco.BestCostHistory, aco.BestCost)
+
+        if (iter+1)%step == 0 || iter == aco.Iterations-1 {
+            printProgressBar(iter+1, aco.Iterations, barWidth)
+        }
+    }
+
+	logBestSolution(aco.BestPath, aco.BestCost)
 }
+
+
 
 func (aco *ACO) resetAnts() {
 	for i := range aco.Ants {
@@ -58,10 +80,41 @@ func (aco *ACO) resetAnts() {
 }
 
 func (aco *ACO) constructSolutions() {
-	numCities := len(aco.Grafo.Cities)
-	for i := range aco.Ants {
-		for step := 0; step < numCities-1; step++ {
-			NextCITY(&aco.Ants[i], aco)
-		}
-	}
+    numCities := len(aco.Grafo.Cities)
+
+    var wg sync.WaitGroup
+    wg.Add(len(aco.Ants))
+
+    for i := range aco.Ants {
+        go func(i int) {
+            defer wg.Done()
+
+            ant := &aco.Ants[i]
+            for step := 0; step < numCities-1; step++ {
+                NextCITY(ant, aco)
+            }
+        }(i)
+    }
+
+    wg.Wait()
+}
+
+func printProgressBar(current, total, width int) {
+    if total <= 0 {
+        return
+    }
+
+    percent := float64(current) / float64(total)
+    filled := int(percent * float64(width))
+    if filled > width {
+        filled = width
+    }
+
+    bar := strings.Repeat("█", filled) + strings.Repeat(" ", width-filled)
+
+    fmt.Printf("\r[%s] %6.2f%% (%d/%d)", bar, percent*100, current, total)
+
+    if current == total {
+        fmt.Println()
+    }
 }

@@ -3,6 +3,7 @@ package aco
 import (
 	"fmt"
 	"math"
+	"sync"
 )
 
 // ===================== Escolha da próxima cidade ==============================
@@ -18,28 +19,25 @@ func NextCITY(ant *Ant, aco *ACO) {
 func selectNextCity(ant *Ant, aco *ACO) int {
 	desirabilities := computeDesirabilities(ant, aco)
 	//Checar isso aqui
-	fmt.Printf("\n\nDesirabilities:  %.5f", desirabilities)
 	total := sum(desirabilities)
-	fmt.Printf("  Total Desirabilities:  %.5f", total)
 	if total == 0 {
 		return -1
 	}
 
-	bestIndex := -1
-	bestProb := -1.0
+	r := ant.Rng.Float64() * total
+    acum := 0.0
 
-	for city, desirability := range desirabilities {
-		if desirability == 0 {
-			continue
-		}
-		prob := desirability / total
-		if prob > bestProb {
-			bestProb = prob
-			bestIndex = city
-		}
-	}
+    for i, d := range desirabilities {
+        if d <= 0 {
+            continue
+        }
+        acum += d
+        if acum >= r {
+            return i
+        }
+    }
 
-	return bestIndex
+    return -1
 }
 
 func computeDesirabilities(ant *Ant, aco *ACO) []float64 {
@@ -83,18 +81,26 @@ func sum(values []float64) float64 {
 }
 
 func PathCOST(aco *ACO) {
-	aco.BestCost = -1
+	var wg sync.WaitGroup
+	
+	for i := range aco.Ants {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			ant := &aco.Ants[i]
+			ant.Cost = computePathCost(ant.Path, aco.Grafo.Cities_distance)
+			ant.Qtd_pheromone = pheromoneAmount(aco.ConstatQ, ant.Cost)
+		}(i)
+	}
+	wg.Wait()
+	
+	aco.BestCost = math.Inf(1)
+	aco.BestPath = nil
+	
 	for i := range aco.Ants {
 		ant := &aco.Ants[i]
-
-		ant.Cost = computePathCost(ant.Path, aco.Grafo.Cities_distance)
-		ant.Qtd_pheromone = pheromoneAmount(aco.ConstatQ, ant.Cost)
-
-		logAntCost(i, ant.Cost)
 		updateBestSolution(aco, ant)
 	}
-
-	logBestSolution(aco.BestPath, aco.BestCost)
 }
 
 func computePathCost(path []int, distances [][]float64) float64 {
@@ -120,7 +126,7 @@ func pheromoneAmount(Q, cost float64) float64 {
 }
 
 func updateBestSolution(aco *ACO, ant *Ant) {
-	if (ant.Cost >= aco.BestCost) && (aco.BestCost != -1) {
+	if ant.Cost >= aco.BestCost {
 		return
 	}
 
