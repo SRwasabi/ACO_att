@@ -1,77 +1,107 @@
 package aco
 
 import (
-	"fmt"
-	"math"
-	"math/rand"
-	"strings"
-	"sync"
+    "fmt"
+    "math"
+    "math/rand"
+    "strings"
+    "sync"
+    "time"
 )
 
-
 type ACO struct {
-	Grafo       *Graph
-	Ants        []Ant
-	Alpha       float64
-	Beta        float64
-	Evaporation float64
-	ConstatQ    float64
-	Iterations  int
+    Grafo       *Graph
+    Ants        []Ant
+    Alpha       float64
+    Beta        float64
+    Evaporation float64
+    ConstatQ    float64
+    Iterations  int
 
-	BestPath        []int
-	BestCost        float64
-	BestCostHistory []float64
-	Rng             *rand.Rand
+    BestPath        []int
+    BestCost        float64
+    
+    BestCostHistory []float64
+    MeanCostHistory []float64
+    MaxCostHistory  []float64
+
+    TimeConstructHistory []float64
+    TimeCostHistory      []float64
+    TimePheromoneHistory []float64
+
+    Rng *rand.Rand
 }
 
 func CreateACO(Grafo *Graph, num_Ants int, Alpha, Beta, Evaporation, ConstatQ float64, Iterations int, Rng *rand.Rand) ACO {
-	Ants := make([]Ant, num_Ants)
-	for i := 0; i < num_Ants; i++ {
-		Ants[i] = Create_ANT(Grafo, Rng)
-	}
+    Ants := make([]Ant, num_Ants)
+    for i := 0; i < num_Ants; i++ {
+        Ants[i] = Create_ANT(Grafo, Rng)
+    }
 
-	return ACO{
-		Grafo:           Grafo,
-		Ants:            Ants,
-		Alpha:           Alpha,
-		Beta:            Beta,
-		Evaporation:     Evaporation,
-		ConstatQ:        ConstatQ,
-		Iterations:      Iterations,
-		BestCost:        math.Inf(1),
-		BestCostHistory: make([]float64, 0, Iterations),
-		Rng:             Rng,
-	}
+    return ACO{
+        Grafo:           Grafo,
+        Ants:            Ants,
+        Alpha:           Alpha,
+        Beta:            Beta,
+        Evaporation:     Evaporation,
+        ConstatQ:        ConstatQ,
+        Iterations:      Iterations,
+        BestCost:        math.Inf(1),
+        
+        BestCostHistory: make([]float64, 0, Iterations),
+        MeanCostHistory: make([]float64, 0, Iterations),
+        MaxCostHistory:  make([]float64, 0, Iterations),
+
+        TimeConstructHistory: make([]float64, 0, Iterations),
+        TimeCostHistory:      make([]float64, 0, Iterations),
+        TimePheromoneHistory: make([]float64, 0, Iterations),
+
+        Rng: Rng,
+    }
 }
 
 func (aco *ACO) Run() {
     barWidth := 50
 
     targetUpdates := aco.Iterations
-
     step := aco.Iterations / targetUpdates
-	fmt.Printf("Updating Progress bar at each %d iterations:\n", step)
     if step <= 0 {
         step = 1
     }
 
     for iter := 0; iter < aco.Iterations; iter++ {
+        tStartConstruct := time.Now()
         aco.resetAnts()
         aco.constructSolutions()
+        tConstruct := time.Since(tStartConstruct).Seconds()
+        aco.TimeConstructHistory = append(aco.TimeConstructHistory, tConstruct)
 
-        PathCOST(aco)
-        UpdatePheromones(aco)
+        tStartCost := time.Now()
+        meanCost, maxCost := PathCOST(aco)
+        aco.updateCostHistories(meanCost, maxCost)
+        tCost := time.Since(tStartCost).Seconds()
+        aco.TimeCostHistory = append(aco.TimeCostHistory, tCost)
+
         aco.BestCostHistory = append(aco.BestCostHistory, aco.BestCost)
+        aco.MeanCostHistory = append(aco.MeanCostHistory, meanCost)
+        aco.MaxCostHistory = append(aco.MaxCostHistory, maxCost)
+
+        tStartPhero := time.Now()
+        UpdatePheromones(aco)
+        tPhero := time.Since(tStartPhero).Seconds()
+        aco.TimePheromoneHistory = append(aco.TimePheromoneHistory, tPhero)
 
         if (iter+1)%step == 0 || iter == aco.Iterations-1 {
             printProgressBar(iter+1, aco.Iterations, barWidth)
         }
     }
-
-	logBestSolution(aco.BestPath, aco.BestCost)
 }
 
-
+func (aco *ACO) updateCostHistories(meanCost, maxCost float64) {
+    aco.BestCostHistory = append(aco.BestCostHistory, aco.BestCost)
+    aco.MeanCostHistory = append(aco.MeanCostHistory, meanCost)
+    aco.MaxCostHistory = append(aco.MaxCostHistory, maxCost)
+}
 
 func (aco *ACO) resetAnts() {
 	for i := range aco.Ants {

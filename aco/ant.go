@@ -16,13 +16,13 @@ type Ant struct {
 
 func Create_ANT(Grafo *Graph, baseRng *rand.Rand) Ant {
     n := len(Grafo.Cities)
-    start := baseRng.Intn(n)
+    seed := baseRng.Int63()
+    antRng := rand.New(rand.NewSource(seed))
 
+    start := antRng.Intn(n)
     visited := make([]bool, n)
     visited[start] = true
 
-    seed := baseRng.Int63()
-    antRng := rand.New(rand.NewSource(seed))
 
     return Ant{
         Start:         start,

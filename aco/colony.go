@@ -24,20 +24,38 @@ func selectNextCity(ant *Ant, aco *ACO) int {
 		return -1
 	}
 
+	// bestProb := -1.0
+	// besIndex := -1
+	
+    // for i, d := range desirabilities {
+    //     if d <= 0 {
+    //         continue
+    //     }
+        
+	// 	prob := d / total
+	// 	if prob > bestProb {
+	// 		bestProb = prob
+	// 		besIndex = i
+	// 	}
+		
+    // }
+
+    // return besIndex
+
 	r := ant.Rng.Float64() * total
-    acum := 0.0
+	cumulative := 0.0
 
-    for i, d := range desirabilities {
-        if d <= 0 {
-            continue
-        }
-        acum += d
-        if acum >= r {
-            return i
-        }
-    }
+	for i, d := range desirabilities {
+		if d <= 0 {
+			continue
+		}
+		cumulative += d
+		if r <= cumulative {
+			return i
+		}
+	}
 
-    return -1
+	return -1
 }
 
 func computeDesirabilities(ant *Ant, aco *ACO) []float64 {
@@ -80,27 +98,54 @@ func sum(values []float64) float64 {
 	return total
 }
 
-func PathCOST(aco *ACO) {
-	var wg sync.WaitGroup
-	
-	for i := range aco.Ants {
-		wg.Add(1)
-		go func(i int) {
-			defer wg.Done()
-			ant := &aco.Ants[i]
-			ant.Cost = computePathCost(ant.Path, aco.Grafo.Cities_distance)
-			ant.Qtd_pheromone = pheromoneAmount(aco.ConstatQ, ant.Cost)
-		}(i)
-	}
-	wg.Wait()
-	
-	aco.BestCost = math.Inf(1)
-	aco.BestPath = nil
-	
-	for i := range aco.Ants {
-		ant := &aco.Ants[i]
-		updateBestSolution(aco, ant)
-	}
+func PathCOST(aco *ACO) (meanCost, maxCost float64) {
+    computeAntCostsParallel(aco)
+    meanCost, maxCost = aggregateCostsAndUpdateBest(aco)
+    return meanCost, maxCost
+}
+
+
+func computeAntCostsParallel(aco *ACO) {
+    var wg sync.WaitGroup
+
+    for i := range aco.Ants {
+        wg.Add(1)
+        go func(i int) {
+            defer wg.Done()
+            ant := &aco.Ants[i]
+            ant.Cost = computePathCost(ant.Path, aco.Grafo.Cities_distance)
+            ant.Qtd_pheromone = pheromoneAmount(aco.ConstatQ, ant.Cost)
+        }(i)
+    }
+
+    wg.Wait()
+}
+
+func aggregateCostsAndUpdateBest(aco *ACO) (meanCost, maxCost float64) {
+    aco.BestCost = math.Inf(1)
+    aco.BestPath = nil
+
+    sum := 0.0
+    maxCost = 0.0
+
+    for i := range aco.Ants {
+        ant := &aco.Ants[i]
+
+        sum += ant.Cost
+        if ant.Cost > maxCost {
+            maxCost = ant.Cost
+        }
+
+        updateBestSolution(aco, ant)
+    }
+
+    if len(aco.Ants) > 0 {
+        meanCost = sum / float64(len(aco.Ants))
+    } else {
+        meanCost = 0
+    }
+
+    return meanCost, maxCost
 }
 
 func computePathCost(path []int, distances [][]float64) float64 {

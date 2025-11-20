@@ -18,21 +18,25 @@ type Graph struct {
 	Cities          []City
 	Cities_distance [][]float64
 	Pheromones      [][]float64
+    InitialPheromones [][]float64
 }
+
 
 //================================================================================
 
 func CreateGRAPH(Rng *rand.Rand) *Graph {
-	const tspFilePath = "coordinates/uy734.tsp"
+	const tspFilePath = "coordinates/wi29.tsp"
 
 	cities := loadCitiesFromTSP(tspFilePath)
 	distances := buildDistanceMatrix(cities)
 	pheromones := buildInitialPheromoneMatrix(len(cities), Rng)
+    initialPheromones := copyMatrix(pheromones)
 
 	return &Graph{
-		Cities:          cities,
-		Cities_distance: distances,
-		Pheromones:      pheromones,
+		Cities:            cities,
+		Cities_distance:   distances,
+		Pheromones:        pheromones,
+        InitialPheromones: initialPheromones,
 	}
 }
 
@@ -135,6 +139,16 @@ func buildInitialPheromoneMatrix(size int, Rng *rand.Rand) [][]float64 {
 	}
 
 	return matrix
+}
+
+func copyMatrix(m [][]float64) [][]float64 {
+	n := len(m)
+	out := make([][]float64, n)
+	for i := range m {
+		out[i] = make([]float64, len(m[i]))
+		copy(out[i], m[i])
+	}
+	return out
 }
 
 func makeSquareMatrix(n int) [][]float64 {
