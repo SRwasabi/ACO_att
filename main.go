@@ -11,10 +11,10 @@ import (
 func main() {
 	var alpha float64 = 0.4
 	var beta float64 = 0.3
-	var evaporation float64 = 0.5
-	var constatQ float64 = 0.3
-	var iteretions int = 120
-	var ants int = 500
+	var evaporation float64 = 0.3
+	var constatQ float64 = 1000
+	var iteretions int = 400
+	var ants int = 50
 	// Rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	Rng := rand.New(rand.NewSource(1))
 
@@ -34,7 +34,10 @@ func main() {
 
 	colony.SaveConvergencePlot("convergence.png")
 	colony.SaveBestPathPlot("best_path.png")
-
+    colony.SaveCostStatsPlot("costsStats.png")
+    colony.SaveTimingPlot("timing.png")
+    colony.SaveInitialPheromoneHeatmap("initial_pheromone_heatmap.png")
+    colony.SaveFinalPheromoneHeatmap("final_pheromone_heatmap.png")
 }
 
 
