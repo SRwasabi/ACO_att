@@ -15,10 +15,12 @@ import (
 // Graphs and Cities ==================================================================
 
 type Graph struct {
-	Cities          []City
-	Cities_distance [][]float64
-	Pheromones      [][]float64
-    InitialPheromones [][]float64
+	Cities          	[]City
+	Cities_distance 	[][]float64
+	Pheromones      	[][]float64
+    InitialPheromones 	[][]float64
+	HeuristicMatrix 	[][]float64
+	
 }
 
 
@@ -163,4 +165,22 @@ func distance(a, b City) float64 {
 	dx := a.X - b.X
 	dy := a.Y - b.Y
 	return math.Sqrt(dx*dx + dy*dy)
+}
+
+func (g *Graph) PrecomputeHeuristics(alpha float64) {
+	n := len(g.Cities)
+	g.HeuristicMatrix = makeSquareMatrix(n)
+
+	for i := 0; i < n; i++ {
+		for j := 0; j < n; j++ {
+			if i == j {
+        		continue
+        	}
+        	dist := g.Cities_distance[i][j]
+        	if dist > 0 {
+        		visibility := 1.0 / dist
+        		g.HeuristicMatrix[i][j] = math.Pow(visibility, alpha)
+            }
+        }
+    }
 }

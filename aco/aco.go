@@ -38,6 +38,7 @@ func CreateACO(Grafo *Graph, num_Ants int, Alpha, Beta, Evaporation, ConstatQ fl
         Ants[i] = Create_ANT(Grafo, Rng)
     }
 
+    Grafo.PrecomputeHeuristics(Alpha)
     return ACO{
         Grafo:           Grafo,
         Ants:            Ants,
@@ -70,26 +71,26 @@ func (aco *ACO) Run() {
     }
 
     for iter := 0; iter < aco.Iterations; iter++ {
-        tStartConstruct := time.Now()
+        tStartConstruct := time.Now() // PARA MEDIR TEMPO 
         aco.resetAnts()
         aco.constructSolutions()
-        tConstruct := time.Since(tStartConstruct).Seconds()
-        aco.TimeConstructHistory = append(aco.TimeConstructHistory, tConstruct)
+        tConstruct := time.Since(tStartConstruct).Seconds() // PARA MEDIR TEMPO 
+        aco.TimeConstructHistory = append(aco.TimeConstructHistory, tConstruct) // PARA MEDIR TEMPO 
 
-        tStartCost := time.Now()
-        meanCost, maxCost := PathCOST(aco)
+        tStartCost := time.Now() // PARA MEDIR TEMPO 
+        meanCost, maxCost := PathCOST(aco) 
         aco.updateCostHistories(meanCost, maxCost)
-        tCost := time.Since(tStartCost).Seconds()
-        aco.TimeCostHistory = append(aco.TimeCostHistory, tCost)
+        tCost := time.Since(tStartCost).Seconds() // PARA MEDIR TEMPO 
+        aco.TimeCostHistory = append(aco.TimeCostHistory, tCost) // PARA MEDIR TEMPO 
 
         aco.BestCostHistory = append(aco.BestCostHistory, aco.BestCost)
         aco.MeanCostHistory = append(aco.MeanCostHistory, meanCost)
         aco.MaxCostHistory = append(aco.MaxCostHistory, maxCost)
 
-        tStartPhero := time.Now()
+        tStartPhero := time.Now() // PARA MEDIR TEMPO 
         UpdatePheromones(aco)
-        tPhero := time.Since(tStartPhero).Seconds()
-        aco.TimePheromoneHistory = append(aco.TimePheromoneHistory, tPhero)
+        tPhero := time.Since(tStartPhero).Seconds() // PARA MEDIR TEMPO 
+        aco.TimePheromoneHistory = append(aco.TimePheromoneHistory, tPhero) // PARA MEDIR TEMPO 
 
         if (iter+1)%step == 0 || iter == aco.Iterations-1 {
             printProgressBar(iter+1, aco.Iterations, barWidth)
@@ -104,8 +105,11 @@ func (aco *ACO) updateCostHistories(meanCost, maxCost float64) {
 }
 
 func (aco *ACO) resetAnts() {
+    n := len(aco.Grafo.Cities)
+
 	for i := range aco.Ants {
-		aco.Ants[i] = Create_ANT(aco.Grafo, aco.Rng)
+		newStart := aco.Ants[i].Rng.Intn(n)
+        aco.Ants[i].Reset(newStart)
 	}
 }
 

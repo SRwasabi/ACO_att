@@ -17,13 +17,13 @@ func NextCITY(ant *Ant, aco *ACO) {
 }
 
 func selectNextCity(ant *Ant, aco *ACO) int {
-	desirabilities := computeDesirabilities(ant, aco)
-	//Checar isso aqui
-	total := sum(desirabilities)
+	total := computeDesirabilities(ant, aco)
+
 	if total == 0 {
 		return -1
 	}
 
+	desirabilities := ant.DesirabilityCache
 	// bestProb := -1.0
 	// besIndex := -1
 	
@@ -58,44 +58,40 @@ func selectNextCity(ant *Ant, aco *ACO) int {
 	return -1
 }
 
-func computeDesirabilities(ant *Ant, aco *ACO) []float64 {
+func computeDesirabilities(ant *Ant, aco *ACO) float64 {
 	n := len(aco.Grafo.Cities)
-	desirabilities := make([]float64, n)
+	total := 0.0
+	buffer := ant.DesirabilityCache
 
 	for to := 0; to < n; to++ {
+		buffer[to] = 0.0
 		if ant.Visited[to] || to == ant.Actual {
 			continue
 		}
-		desirabilities[to] = transitionDesirability(ant.Actual, to, aco)
+		val := transitionDesirability(ant.Actual, to, aco)
+		
+		buffer[to] = val
+		total += val
 	}
 
-	return desirabilities
+	return total
 }
 
 func transitionDesirability(from, to int, aco *ACO) float64 {
-	dist := aco.Grafo.Cities_distance[from][to]
-	if dist <= 0 {
+	heuristic := aco.Grafo.HeuristicMatrix[from][to]
+	pheromone := aco.Grafo.Pheromones[from][to]
+
+	if pheromone <= 0 {
 		return 0
 	}
 
-	visibility := 1.0 / dist
-	pheromone := aco.Grafo.Pheromones[from][to]
-
-	return math.Pow(visibility, aco.Alpha) * math.Pow(pheromone, aco.Beta)
+	return heuristic * math.Pow(pheromone, aco.Beta)
 }
 
 func moveAntToCity(ant *Ant, cityIndex int) {
 	ant.Path = append(ant.Path, cityIndex)
 	ant.Actual = cityIndex
 	ant.Visited[cityIndex] = true
-}
-
-func sum(values []float64) float64 {
-	total := 0.0
-	for _, v := range values {
-		total += v
-	}
-	return total
 }
 
 func PathCOST(aco *ACO) (meanCost, maxCost float64) {
