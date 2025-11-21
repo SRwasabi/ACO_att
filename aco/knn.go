@@ -39,7 +39,7 @@ func (g *Graph) collectNeighbors(cityIndex int) []neighbor {
 		}
 		candidates = append(candidates, neighbor{
 			index: 	j,
-			dist:	g.Cities_distance[cityIndex][j],
+			dist:	g.DistanceMatrix[cityIndex][j],
 		})
 	}
 	return candidates
@@ -68,7 +68,7 @@ func (g *Graph) LogNeighbors(cityIndex int) {
     fmt.Printf("Vizinhos da cidade %d (Total: %d):\n", cityIndex, len(neighbors))
     
     for i, targetIndex := range neighbors {
-        dist := g.Cities_distance[cityIndex][targetIndex]
+        dist := g.DistanceMatrix[cityIndex][targetIndex]
         fmt.Printf("  %dº: Cidade %d (Dist: %.2f)\n", i+1, targetIndex, dist)
     }
 }

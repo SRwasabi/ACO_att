@@ -30,10 +30,10 @@ type ACO struct {
     Rng *rand.Rand
 }
 
-func CreateACO(Grafo *Graph, cfg config.RunConfig, Rng *rand.Rand) *ACO {
+func NewAco(Grafo *Graph, cfg config.RunConfig, Rng *rand.Rand) *ACO {
     Ants := make([]Ant, cfg.NumAnts)
     for i := 0; i < cfg.NumAnts; i++ {
-        Ants[i] = Create_ANT(Grafo, Rng)
+        Ants[i] = NewAnt(Grafo, Rng)
     }
 
     Grafo.PrecomputeHeuristics(cfg.Alpha)

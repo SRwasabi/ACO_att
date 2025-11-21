@@ -53,7 +53,7 @@ func executeRun(cfg config.RunConfig) {
 	Rng := rand.New(rand.NewSource(cfg.Seed))   
 
     start := time.Now()
-        g := aco.CreateGRAPH(Rng) 
+        g := aco.NewGraph(cfg.InputFile, Rng) 
         
         if cfg.UseKNN {
             g.ComputeNearestNeighbors(cfg.KNNSize)
@@ -64,7 +64,7 @@ func executeRun(cfg config.RunConfig) {
 
 
     start = time.Now()
-        colony := aco.CreateACO(g, cfg, Rng)
+        colony := aco.NewAco(g, cfg, Rng)
         colony.Run()
         elapsed = time.Since(start)
     fmt.Print("-Tempo de execução ACO: ")

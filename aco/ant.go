@@ -9,13 +9,13 @@ type Ant struct {
 	Path                []int
 	Cost                float64
 	Actual              int
-	Qtd_pheromone       float64
+	PheromoneAmount       float64
 	Visited             []bool
     DesirabilityCache   []float64
 	Rng                 *rand.Rand
 }
 
-func Create_ANT(Grafo *Graph, baseRng *rand.Rand) Ant {
+func NewAnt(Grafo *Graph, baseRng *rand.Rand) Ant {
     n               := len(Grafo.Cities)
     seed            := baseRng.Int63()
     antRng          := rand.New(rand.NewSource(seed))
@@ -31,7 +31,7 @@ func Create_ANT(Grafo *Graph, baseRng *rand.Rand) Ant {
         Cost:               0.0,
         Actual:             start,
         Visited:            visited,
-        Qtd_pheromone:      0.0,
+        PheromoneAmount:    0.0,
         DesirabilityCache:  make([]float64, n),
         Rng:                antRng,
     }
@@ -41,7 +41,7 @@ func (a *Ant) Reset(startNode int) {
     a.Start = startNode
     a.Actual = startNode
     a.Cost = 0.0
-    a.Qtd_pheromone = 0.0
+    a.PheromoneAmount = 0.0
 
     a.Path = a.Path[:0]
     a.Path = append(a.Path, startNode)

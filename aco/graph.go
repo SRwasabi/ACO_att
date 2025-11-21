@@ -16,7 +16,7 @@ import (
 
 type Graph struct {
 	Cities          	[]City
-	Cities_distance 	[][]float64
+	DistanceMatrix 		[][]float64
 	Pheromones      	[][]float64
     InitialPheromones 	[][]float64
 	HeuristicMatrix 	[][]float64
@@ -26,17 +26,15 @@ type Graph struct {
 
 //================================================================================
 
-func CreateGRAPH(Rng *rand.Rand) *Graph {
-	const tspFilePath = "coordinates/uy734.tsp"
-
-	cities := loadCitiesFromTSP(tspFilePath)
+func NewGraph(filePath string, Rng *rand.Rand)*Graph {
+	cities := loadCitiesFromTSP(filePath)
 	distances := buildDistanceMatrix(cities)
 	pheromones := buildInitialPheromoneMatrix(len(cities), Rng)
     initialPheromones := copyMatrix(pheromones)
 
 	return &Graph{
 		Cities:            cities,
-		Cities_distance:   distances,
+		DistanceMatrix:   distances,
 		Pheromones:        pheromones,
         InitialPheromones: initialPheromones,
 	}
@@ -108,7 +106,7 @@ func parseCityLine(line string) (City, bool) {
 	id, _ := strconv.Atoi(fields[0])
 	x, _ := strconv.ParseFloat(fields[1], 64)
 	y, _ := strconv.ParseFloat(fields[2], 64)
-	return Create_CITY(id, x, y), true
+	return NewCity(id, x, y), true
 }
 
 func buildDistanceMatrix(cities []City) [][]float64 {
@@ -176,7 +174,7 @@ func (g *Graph) PrecomputeHeuristics(alpha float64) {
 			if i == j {
         		continue
         	}
-        	dist := g.Cities_distance[i][j]
+        	dist := g.DistanceMatrix[i][j]
         	if dist > 0 {
         		visibility := 1.0 / dist
         		g.HeuristicMatrix[i][j] = math.Pow(visibility, alpha)

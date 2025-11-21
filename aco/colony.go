@@ -186,8 +186,8 @@ func computeAntCostsParallel(aco *ACO) {
         go func(i int) {
             defer wg.Done()
             ant := &aco.Ants[i]
-            ant.Cost = computePathCost(ant.Path, aco.Grafo.Cities_distance)
-            ant.Qtd_pheromone = pheromoneAmount(aco.Cfg.Q, ant.Cost)
+            ant.Cost = computePathCost(ant.Path, aco.Grafo.DistanceMatrix)
+            ant.PheromoneAmount = pheromoneAmount(aco.Cfg.Q, ant.Cost)
         }(i)
     }
 
@@ -305,7 +305,7 @@ func allPheromoneAmountToDeposite(aco *ACO, fromCity, toCity int) float64 {
 	for i := range aco.Ants {
 		ant := &aco.Ants[i]
 		if antUsesEdge(ant.Path, fromCity, toCity) {
-			delta += ant.Qtd_pheromone
+			delta += ant.PheromoneAmount
 		}
 	}
 
