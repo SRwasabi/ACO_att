@@ -1,46 +1,86 @@
 package main
 
 import (
-	"math/rand"
 	"fmt"
+	"log"
+	"math/rand"
 	"time"
-
+    "os"
+    
 	"github.com/SRwasabi/ACO_att/aco"
+	"github.com/SRwasabi/ACO_att/pkg/config"
 )
 
 func main() {
-    var alpha float64 = 0.4
-    var beta float64 = 0.3
-    var evaporation float64 = 0.4
-    var constatQ float64 = 100
-    var iteretions int = 1200
-    var ants int = 500
-    var useRouletteSelection bool = true
-    var UseKNN bool = true
-    // Rng := rand.New(rand.NewSource(time.Now().UnixNano()))
-    Rng := rand.New(rand.NewSource(1))
+	matrixCfg := config.Default()	
+	jsonPath := config.ParseFlags(&matrixCfg)
+
+	var matrices []config.MatrixConfig
+
+	if jsonPath != "" {
+		loaded, err := config.LoadMatrix(jsonPath)
+		if err != nil {
+			log.Fatalf("Erro JSON: %v", err)
+		}
+		for i := range loaded {
+			config.ParseFlags(&loaded[i])
+		}
+		matrices = loaded
+		fmt.Printf(">> Carregadas %d matrizes de configuração.\n", len(matrices))
+	} else {
+		matrices = []config.MatrixConfig{matrixCfg}
+	}
+
+	totalRuns := 0
+	for _, m := range matrices {
+		runConfigs := m.Expand()
+		totalRuns += len(runConfigs)
+		
+		for i, runCfg := range runConfigs {
+			if runCfg.Seed == 0 {
+				runCfg.Seed = time.Now().UnixNano()
+			}
+
+			fmt.Printf("\n=== EXECUÇÃO %d/%d (Total: %d) ===\n", i+1, len(runConfigs), totalRuns)
+            m.Print()
+
+			executeRun(runCfg)
+		}
+	}
+}
+
+func executeRun(cfg config.RunConfig) {
+	Rng := rand.New(rand.NewSource(cfg.Seed))   
 
     start := time.Now()
-        g := aco.CreateGRAPH(Rng)
-        g.ComputeNearestNeighbors(20)
-        fmt.Printf("Loaded Cities: %d \n", len(g.Cities))
-    elapsed := time.Since(start) 
-    fmt.Printf("Time taken to load cities: \n")
-    printDurationStats(elapsed) 
+        g := aco.CreateGRAPH(Rng) 
+        
+        if cfg.UseKNN {
+            g.ComputeNearestNeighbors(cfg.KNNSize)
+        }
+        fmt.Printf("\n\nCidades carregadas: %d \n", len(g.Cities))
+        elapsed := time.Since(start)
+	printDurationStats(elapsed)
+
 
     start = time.Now()
-        colony := aco.CreateACO(g, ants, alpha, beta, evaporation, constatQ, iteretions, Rng, useRouletteSelection, UseKNN)
+        colony := aco.CreateACO(g, cfg, Rng)
         colony.Run()
-    elapsed = time.Since(start) 
-    fmt.Printf("Time taken to run ACO: \n")
-    printDurationStats(elapsed) 
+        elapsed = time.Since(start)
+    fmt.Print("-Tempo de execução ACO: ")
+    printDurationStats(elapsed)
+    
+	prefix := fmt.Sprintf("%s_Results/", cfg.ExperimentName)
+    os.MkdirAll(prefix, os.ModePerm)
 
-    colony.SaveConvergencePlot("convergence.png")
-    colony.SaveBestPathPlot("best_path.png")
-    colony.SaveCostStatsPlot("costsStats.png")
-    colony.SaveTimingPlot("timing.png")
-    colony.SaveInitialPheromoneHeatmap("initial_pheromone_heatmap.png")
-    colony.SaveFinalPheromoneHeatmap("final_pheromone_heatmap.png")
+    colony.SaveConvergencePlot(prefix + "convergence.png")
+    colony.SaveBestPathPlot(prefix + "best_path.png")
+    colony.SaveCostStatsPlot(prefix + "costsStats.png")
+    colony.SaveTimingPlot(prefix + "timing.png")
+    colony.SaveInitialPheromoneHeatmap(prefix + "initial_pheromone_heatmap.png")
+    colony.SaveFinalPheromoneHeatmap(prefix + "final_pheromone_heatmap.png")
+
+	fmt.Printf("Resultados salvos com prefixo: '%s'\n", prefix)
 }
 
 

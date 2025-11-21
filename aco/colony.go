@@ -19,7 +19,7 @@ func NextCITY(ant *Ant, aco *ACO) {
 func selectNextCity(ant *Ant, aco *ACO) int {
 	result := -1
 
-	if aco.UseKNN {
+	if aco.Cfg.UseKNN {
 		result = trySelectKNN(ant, aco)
 		if result != -1 {
 			return result
@@ -56,7 +56,7 @@ func trySelectKNN(ant *Ant, aco *ACO) int {
 		return -1
 	}
 
-	if aco.RouletteSelection {
+	if aco.Cfg.RouletteSelection {
 		return selectRouletteCity(ant, total, candidates)
 	}
 	
@@ -69,7 +69,7 @@ func trySelectGlobal(ant *Ant, aco *ACO) int {
 		return -1
 	}
 	
-	if (aco.RouletteSelection) {
+	if (aco.Cfg.RouletteSelection) {
 		return selectRouletteCity(ant, total, nil)
 	}
 	
@@ -162,7 +162,7 @@ func transitionDesirability(from, to int, aco *ACO) float64 {
 		return 0
 	}
 
-	return heuristic * math.Pow(pheromone, aco.Beta)
+	return heuristic * math.Pow(pheromone, aco.Cfg.Beta)
 }
 
 func moveAntToCity(ant *Ant, cityIndex int) {
@@ -187,7 +187,7 @@ func computeAntCostsParallel(aco *ACO) {
             defer wg.Done()
             ant := &aco.Ants[i]
             ant.Cost = computePathCost(ant.Path, aco.Grafo.Cities_distance)
-            ant.Qtd_pheromone = pheromoneAmount(aco.ConstatQ, ant.Cost)
+            ant.Qtd_pheromone = pheromoneAmount(aco.Cfg.Q, ant.Cost)
         }(i)
     }
 
@@ -271,7 +271,7 @@ func UpdatePheromones(aco *ACO) {
 }
 
 func evaporatePheromones(aco *ACO) {
-	factor := 1 - aco.Evaporation
+	factor := 1 - aco.Cfg.Evaporation
 
 	for i := range aco.Grafo.Pheromones {
 		for j := range aco.Grafo.Pheromones[i] {
