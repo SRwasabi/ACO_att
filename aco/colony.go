@@ -17,33 +17,79 @@ func NextCITY(ant *Ant, aco *ACO) {
 }
 
 func selectNextCity(ant *Ant, aco *ACO) int {
-	total := computeDesirabilities(ant, aco)
+	result := -1
 
-	if total == 0 {
+	if aco.UseKNN {
+		result = trySelectKNN(ant, aco)
+		if result != -1 {
+			return result
+		}
+	}
+
+	result = trySelectGlobal(ant, aco)
+	if result == -1 {
+		panic("No valid city could be selected for the ant.")
+	}
+	return result
+}
+
+func trySelectKNN(ant *Ant, aco *ACO) int {
+	neighbors := aco.Grafo.NearestNeighbors[ant.Actual]
+	desirabilities := ant.DesirabilityCache
+	total := 0.0
+
+	candidates := make([]int, 0, len(neighbors))
+
+	for _, neighborIndex := range neighbors {
+		if ant.Visited[neighborIndex] {
+			continue
+		}
+
+		val := transitionDesirability(ant.Actual, neighborIndex, aco)
+		
+		desirabilities[neighborIndex] = val
+		total += val
+		candidates = append(candidates, neighborIndex)
+	}
+	
+	if len(candidates) == 0 {
 		return -1
 	}
 
-	desirabilities := ant.DesirabilityCache
-	// bestProb := -1.0
-	// besIndex := -1
+	if aco.RouletteSelection {
+		return selectRouletteCity(ant, total, candidates)
+	}
 	
-    // for i, d := range desirabilities {
-    //     if d <= 0 {
-    //         continue
-    //     }
-        
-	// 	prob := d / total
-	// 	if prob > bestProb {
-	// 		bestProb = prob
-	// 		besIndex = i
-	// 	}
-		
-    // }
+	return selectGreedyCity(ant, total, candidates)
+}
 
-    // return besIndex
+func trySelectGlobal(ant *Ant, aco *ACO) int {
+	total := computeDesirabilities(ant, aco)
+	if total == 0 {
+		return -1
+	}
+	
+	if (aco.RouletteSelection) {
+		return selectRouletteCity(ant, total, nil)
+	}
+	
+	return selectGreedyCity(ant, total, nil)
+}
 
+func selectRouletteCity(ant *Ant, total float64, candidates []int) int {
 	r := ant.Rng.Float64() * total
 	cumulative := 0.0
+	desirabilities := ant.DesirabilityCache
+
+	if candidates != nil {
+		for _, i := range candidates {
+			cumulative += desirabilities[i]
+			if r <= cumulative {
+				return i
+			}
+		}
+		return candidates[len(candidates)-1]
+	}
 
 	for i, d := range desirabilities {
 		if d <= 0 {
@@ -57,6 +103,37 @@ func selectNextCity(ant *Ant, aco *ACO) int {
 
 	return -1
 }
+
+func selectGreedyCity(ant *Ant, total float64, candidates []int) int {
+	desirabilities := ant.DesirabilityCache
+	bestProb := -1.0
+	bestIndex := -1
+
+	checkIndex := func(i int) {
+		d := desirabilities[i]
+		if d <= 0 {
+			return
+		}
+		prob := d / total
+		if prob > bestProb {
+			bestProb = prob
+			bestIndex = i
+		}
+	}
+	
+	if candidates != nil {
+		for _, i := range candidates {
+			checkIndex(i)
+		}
+	} else {
+		for i := range desirabilities {
+			checkIndex(i)
+		}
+	}
+
+    return bestIndex
+}
+
 
 func computeDesirabilities(ant *Ant, aco *ACO) float64 {
 	n := len(aco.Grafo.Cities)

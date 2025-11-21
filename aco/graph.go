@@ -20,14 +20,14 @@ type Graph struct {
 	Pheromones      	[][]float64
     InitialPheromones 	[][]float64
 	HeuristicMatrix 	[][]float64
-	
+	NearestNeighbors 	[][]int
 }
 
 
 //================================================================================
 
 func CreateGRAPH(Rng *rand.Rand) *Graph {
-	const tspFilePath = "coordinates/wi29.tsp"
+	const tspFilePath = "coordinates/uy734.tsp"
 
 	cities := loadCitiesFromTSP(tspFilePath)
 	distances := buildDistanceMatrix(cities)
@@ -113,7 +113,7 @@ func parseCityLine(line string) (City, bool) {
 
 func buildDistanceMatrix(cities []City) [][]float64 {
 	n := len(cities)
-	matrix := makeSquareMatrix(n)
+	matrix := makeSquareMatrixFloat(n)
 
 	for i := 0; i < n; i++ {
 		for j := i; j < n; j++ {
@@ -130,7 +130,7 @@ func buildDistanceMatrix(cities []City) [][]float64 {
 }
 
 func buildInitialPheromoneMatrix(size int, Rng *rand.Rand) [][]float64 {
-	matrix := makeSquareMatrix(size)
+	matrix := makeSquareMatrixFloat(size)
 
 	for i := 0; i < size; i++ {
 		for j := i + 1; j < size; j++ {
@@ -153,7 +153,7 @@ func copyMatrix(m [][]float64) [][]float64 {
 	return out
 }
 
-func makeSquareMatrix(n int) [][]float64 {
+func makeSquareMatrixFloat(n int) [][]float64 {
 	matrix := make([][]float64, n)
 	for i := range matrix {
 		matrix[i] = make([]float64, n)
@@ -169,7 +169,7 @@ func distance(a, b City) float64 {
 
 func (g *Graph) PrecomputeHeuristics(alpha float64) {
 	n := len(g.Cities)
-	g.HeuristicMatrix = makeSquareMatrix(n)
+	g.HeuristicMatrix = makeSquareMatrixFloat(n)
 
 	for i := 0; i < n; i++ {
 		for j := 0; j < n; j++ {

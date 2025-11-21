@@ -10,29 +10,31 @@ import (
 )
 
 type ACO struct {
-    Grafo       *Graph
-    Ants        []Ant
-    Alpha       float64
-    Beta        float64
-    Evaporation float64
-    ConstatQ    float64
-    Iterations  int
+    Grafo                  *Graph
+    Ants                    []Ant
+    Alpha                   float64
+    Beta                    float64
+    Evaporation             float64
+    ConstatQ                float64
+    Iterations              int
+    RouletteSelection       bool
+    UseKNN                  bool
 
-    BestPath        []int
-    BestCost        float64
+    BestPath                []int
+    BestCost                float64
     
-    BestCostHistory []float64
-    MeanCostHistory []float64
-    MaxCostHistory  []float64
+    BestCostHistory         []float64
+    MeanCostHistory         []float64
+    MaxCostHistory          []float64
 
-    TimeConstructHistory []float64
-    TimeCostHistory      []float64
-    TimePheromoneHistory []float64
+    TimeConstructHistory    []float64
+    TimeCostHistory         []float64
+    TimePheromoneHistory    []float64
 
     Rng *rand.Rand
 }
 
-func CreateACO(Grafo *Graph, num_Ants int, Alpha, Beta, Evaporation, ConstatQ float64, Iterations int, Rng *rand.Rand) ACO {
+func CreateACO(Grafo *Graph, num_Ants int, Alpha, Beta, Evaporation, ConstatQ float64, Iterations int, Rng *rand.Rand, rouletteSelection bool, useKNN bool) ACO {
     Ants := make([]Ant, num_Ants)
     for i := 0; i < num_Ants; i++ {
         Ants[i] = Create_ANT(Grafo, Rng)
@@ -56,7 +58,8 @@ func CreateACO(Grafo *Graph, num_Ants int, Alpha, Beta, Evaporation, ConstatQ fl
         TimeConstructHistory: make([]float64, 0, Iterations),
         TimeCostHistory:      make([]float64, 0, Iterations),
         TimePheromoneHistory: make([]float64, 0, Iterations),
-
+        RouletteSelection:    rouletteSelection,
+        UseKNN:               useKNN,
         Rng: Rng,
     }
 }
@@ -72,24 +75,21 @@ func (aco *ACO) Run() {
 
     for iter := 0; iter < aco.Iterations; iter++ {
         tStartConstruct := time.Now() // PARA MEDIR TEMPO 
-        aco.resetAnts()
-        aco.constructSolutions()
+            aco.resetAnts()
+            aco.constructSolutions()
         tConstruct := time.Since(tStartConstruct).Seconds() // PARA MEDIR TEMPO 
         aco.TimeConstructHistory = append(aco.TimeConstructHistory, tConstruct) // PARA MEDIR TEMPO 
 
         tStartCost := time.Now() // PARA MEDIR TEMPO 
-        meanCost, maxCost := PathCOST(aco) 
-        aco.updateCostHistories(meanCost, maxCost)
+            meanCost, maxCost := PathCOST(aco) 
+            aco.updateCostHistories(meanCost, maxCost)
         tCost := time.Since(tStartCost).Seconds() // PARA MEDIR TEMPO 
         aco.TimeCostHistory = append(aco.TimeCostHistory, tCost) // PARA MEDIR TEMPO 
 
-        aco.BestCostHistory = append(aco.BestCostHistory, aco.BestCost)
-        aco.MeanCostHistory = append(aco.MeanCostHistory, meanCost)
-        aco.MaxCostHistory = append(aco.MaxCostHistory, maxCost)
 
         tStartPhero := time.Now() // PARA MEDIR TEMPO 
-        UpdatePheromones(aco)
-        tPhero := time.Since(tStartPhero).Seconds() // PARA MEDIR TEMPO 
+            UpdatePheromones(aco)
+            tPhero := time.Since(tStartPhero).Seconds() // PARA MEDIR TEMPO 
         aco.TimePheromoneHistory = append(aco.TimePheromoneHistory, tPhero) // PARA MEDIR TEMPO 
 
         if (iter+1)%step == 0 || iter == aco.Iterations-1 {
