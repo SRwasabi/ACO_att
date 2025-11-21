@@ -7,8 +7,10 @@ import (
 	"time"
     "os"
     
-	"github.com/SRwasabi/ACO_att/aco"
+	"github.com/SRwasabi/ACO_att/pkg/aco"
 	"github.com/SRwasabi/ACO_att/pkg/config"
+    "github.com/SRwasabi/ACO_att/pkg/plotter"
+    "github.com/SRwasabi/ACO_att/pkg/graph"
 )
 
 func main() {
@@ -53,7 +55,7 @@ func executeRun(cfg config.RunConfig) {
 	Rng := rand.New(rand.NewSource(cfg.Seed))   
 
     start := time.Now()
-        g := aco.NewGraph(cfg.InputFile, Rng) 
+        g := graph.NewGraph(cfg.InputFile, Rng) 
         
         if cfg.UseKNN {
             g.ComputeNearestNeighbors(cfg.KNNSize)
@@ -73,12 +75,12 @@ func executeRun(cfg config.RunConfig) {
 	prefix := fmt.Sprintf("%s_Results/", cfg.ExperimentName)
     os.MkdirAll(prefix, os.ModePerm)
 
-    colony.SaveConvergencePlot(prefix + "convergence.png")
-    colony.SaveBestPathPlot(prefix + "best_path.png")
-    colony.SaveCostStatsPlot(prefix + "costsStats.png")
-    colony.SaveTimingPlot(prefix + "timing.png")
-    colony.SaveInitialPheromoneHeatmap(prefix + "initial_pheromone_heatmap.png")
-    colony.SaveFinalPheromoneHeatmap(prefix + "final_pheromone_heatmap.png")
+	plotter.SaveConvergence(colony.BestCostHistory, prefix+"convergence.png")
+	plotter.SaveBestPath(g.Cities, colony.BestPath, colony.BestCost, prefix+"best_path.png")
+	plotter.SaveCostStats(colony.BestCostHistory, colony.MeanCostHistory, colony.MaxCostHistory, prefix+"costsStats.png")
+	plotter.SaveTiming(colony.TimeConstructHistory, colony.TimeCostHistory, colony.TimePheromoneHistory, prefix+"timing.png")
+	plotter.SaveHeatmap(g.InitialPheromones, prefix+"initial_pheromone_heatmap.png", "Initial Pheromone Levels")
+	plotter.SaveHeatmap(g.Pheromones, prefix+"final_pheromone_heatmap.png", "Final Pheromone Levels")
 
 	fmt.Printf("Resultados salvos com prefixo: '%s'\n", prefix)
 }

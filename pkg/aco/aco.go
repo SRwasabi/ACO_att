@@ -8,12 +8,13 @@ import (
     "sync"
     "time"
     "github.com/SRwasabi/ACO_att/pkg/config"
+    "github.com/SRwasabi/ACO_att/pkg/graph"
 )
 
 type ACO struct {
     Cfg config.RunConfig
 
-    Grafo                  *Graph
+    Grafo                  *graph.Graph
     Ants                    []Ant
 
     BestPath                []int
@@ -30,7 +31,7 @@ type ACO struct {
     Rng *rand.Rand
 }
 
-func NewAco(Grafo *Graph, cfg config.RunConfig, Rng *rand.Rand) *ACO {
+func NewAco(Grafo *graph.Graph, cfg config.RunConfig, Rng *rand.Rand) *ACO {
     Ants := make([]Ant, cfg.NumAnts)
     for i := 0; i < cfg.NumAnts; i++ {
         Ants[i] = NewAnt(Grafo, Rng)

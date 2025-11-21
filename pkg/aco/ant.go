@@ -2,6 +2,7 @@ package aco
 
 import (
 	"math/rand"
+    "github.com/SRwasabi/ACO_att/pkg/graph"
 )
 
 type Ant struct {
@@ -15,7 +16,7 @@ type Ant struct {
 	Rng                 *rand.Rand
 }
 
-func NewAnt(Grafo *Graph, baseRng *rand.Rand) Ant {
+func NewAnt(Grafo *graph.Graph, baseRng *rand.Rand) Ant {
     n               := len(Grafo.Cities)
     seed            := baseRng.Int63()
     antRng          := rand.New(rand.NewSource(seed))

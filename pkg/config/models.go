@@ -7,12 +7,12 @@ import (
 func Default() MatrixConfig {
 	return MatrixConfig{
 		ExperimentName:    "Default",
-		InputFile:         StringList{"coordinates/wi29.tsp"},
-		NumAnts:           IntList{50},
-		Iterations:        IntList{100},
-		Alpha:             FloatList{1.0},
-		Beta:              FloatList{2.0},
-		Evaporation:       FloatList{0.1},
+		InputFile:         StringList{"coordinates/uy734.tsp"},
+		NumAnts:           IntList{500},
+		Iterations:        IntList{1200},
+		Alpha:             FloatList{0.4},
+		Beta:              FloatList{0.3},
+		Evaporation:       FloatList{0.4},
 		Q:                 FloatList{100.0},
 		KNNSize:           IntList{20},
 		UseKNN:            BoolList{true},
