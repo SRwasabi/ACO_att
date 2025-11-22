@@ -192,30 +192,40 @@ func computeAntCostsParallel(aco *ACO) {
 }
 
 func aggregateCostsAndUpdateBest(aco *ACO) (meanCost, maxCost float64) {
-    aco.BestCost = math.Inf(1)
-    aco.BestPath = nil
+	aco.BestCost = math.Inf(1)
+	aco.BestPath = nil
 
-    sum := 0.0
-    maxCost = 0.0
+	sum := 0.0
+	count := 0
+	maxCost = 0.0
 
-    for i := range aco.Ants {
-        ant := &aco.Ants[i]
+	totalCities := len(aco.Grafo.Cities)
+	for i := range aco.Ants {
+		ant := &aco.Ants[i]
 
-        sum += ant.Cost
-        if ant.Cost > maxCost {
-            maxCost = ant.Cost
-        }
+		if len(ant.Path) < totalCities {
+			continue
+		}
+		
+		sum += ant.Cost
+		count++
 
-        updateBestSolution(aco, ant)
-    }
+		if count > 0 {
+			meanCost = sum / float64(count)
+		} else {
+			meanCost = 0
+		}
 
-    if len(aco.Ants) > 0 {
-        meanCost = sum / float64(len(aco.Ants))
-    } else {
-        meanCost = 0
-    }
+		updateBestSolution(aco, ant)
+	}
 
-    return meanCost, maxCost
+	if len(aco.Ants) > 0 {
+		meanCost = sum / float64(len(aco.Ants))
+	} else {
+		meanCost = 0
+	}
+
+	return meanCost, maxCost
 }
 
 func computePathCost(path []int, distances [][]float64) float64 {
@@ -269,13 +279,12 @@ func UpdatePheromones(aco *ACO) {
 
 func evaporatePheromones(aco *ACO) {
 	factor := 1 - aco.Cfg.Evaporation
+	n := len(aco.Grafo.Pheromones)
 
-	for i := range aco.Grafo.Pheromones {
-		for j := range aco.Grafo.Pheromones[i] {
-			if i == j {
-				continue
-			}
+	for i := 0; i < n; i++ {
+		for j := i + 1; j < n; j++ {
 			aco.Grafo.Pheromones[i][j] *= factor
+			aco.Grafo.Pheromones[j][i] = aco.Grafo.Pheromones[i][j]
 		}
 	}
 }
