@@ -27,9 +27,6 @@ func selectNextCity(ant *Ant, aco *ACO) int {
 	}
 
 	result = trySelectGlobal(ant, aco)
-	if result == -1 {
-		panic("No valid city could be selected for the ant.")
-	}
 	return result
 }
 

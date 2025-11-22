@@ -1,0 +1,14 @@
+{
+  "experiment_name": "Grid_Search_Params",
+  "input_file": ["coordinates/uy734.tsp"],
+  "num_ants": [500],
+  "iterations": 1000,
+  "alpha": 3.0,
+  "beta": [4.0],
+  "evaporation": [0.1, 0.3],
+  "q": 100.0,
+  "knn_size": [20],
+  "use_knn": true,
+  "roulette_selection": true,
+  "seed": 1
+}
