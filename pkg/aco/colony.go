@@ -27,6 +27,9 @@ func selectNextCity(ant *Ant, aco *ACO) int {
 	}
 
 	result = trySelectGlobal(ant, aco)
+	if result == -1 {
+		return -1
+	}
 	return result
 }
 
@@ -48,15 +51,12 @@ func trySelectKNN(ant *Ant, aco *ACO) int {
 		total += val
 		candidates = append(candidates, neighborIndex)
 	}
-	
 	if len(candidates) == 0 {
 		return -1
 	}
-
 	if aco.Cfg.RouletteSelection {
 		return selectRouletteCity(ant, total, candidates)
 	}
-	
 	return selectGreedyCity(ant, total, candidates)
 }
 
@@ -143,7 +143,7 @@ func computeDesirabilities(ant *Ant, aco *ACO) float64 {
 			continue
 		}
 		val := transitionDesirability(ant.Actual, to, aco)
-		
+
 		buffer[to] = val
 		total += val
 	}
@@ -169,58 +169,58 @@ func moveAntToCity(ant *Ant, cityIndex int) {
 }
 
 func PathCOST(aco *ACO) (meanCost, maxCost float64) {
-    computeAntCostsParallel(aco)
-    meanCost, maxCost = aggregateCostsAndUpdateBest(aco)
-    return meanCost, maxCost
+	computeAntCostsParallel(aco)
+	meanCost, maxCost = aggregateCostsAndUpdateBest(aco)
+	return meanCost, maxCost
 }
 
-
 func computeAntCostsParallel(aco *ACO) {
-    var wg sync.WaitGroup
+	var wg sync.WaitGroup
+	totalCities := len(aco.Grafo.Cities)
 
-    for i := range aco.Ants {
-        wg.Add(1)
-        go func(i int) {
-            defer wg.Done()
-            ant := &aco.Ants[i]
-            ant.Cost = computePathCost(ant.Path, aco.Grafo.DistanceMatrix)
-            ant.PheromoneAmount = pheromoneAmount(aco.Cfg.Q, ant.Cost)
-        }(i)
-    }
+	for i := range aco.Ants {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			ant := &aco.Ants[i]
 
-    wg.Wait()
+			if len(ant.Path) < totalCities {
+				ant.Cost = math.Inf(1) 
+				ant.PheromoneAmount = 0
+			} else {
+				ant.Cost = computePathCost(ant.Path, aco.Grafo.DistanceMatrix)
+				ant.PheromoneAmount = pheromoneAmount(aco.Cfg.Q, ant.Cost)
+			}
+		}(i)
+	}
+
+	wg.Wait()
 }
 
 func aggregateCostsAndUpdateBest(aco *ACO) (meanCost, maxCost float64) {
-	aco.BestCost = math.Inf(1)
-	aco.BestPath = nil
-
 	sum := 0.0
-	count := 0
 	maxCost = 0.0
+	count := 0
 
-	totalCities := len(aco.Grafo.Cities)
 	for i := range aco.Ants {
 		ant := &aco.Ants[i]
 
-		if len(ant.Path) < totalCities {
+		if math.IsInf(ant.Cost, 1) {
 			continue
 		}
-		
+
 		sum += ant.Cost
 		count++
 
-		if count > 0 {
-			meanCost = sum / float64(count)
-		} else {
-			meanCost = 0
+		if ant.Cost > maxCost {
+			maxCost = ant.Cost
 		}
 
 		updateBestSolution(aco, ant)
 	}
 
-	if len(aco.Ants) > 0 {
-		meanCost = sum / float64(len(aco.Ants))
+	if count > 0 {
+		meanCost = sum / float64(count)
 	} else {
 		meanCost = 0
 	}
