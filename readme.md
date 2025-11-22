@@ -44,7 +44,7 @@ Certifique-se de ter o [Go instalado](https://go.dev/dl/).
 
 ## 🛠️ Como Usar
 
-### 1\. Execução Rápida (CLI)
+### 1. Execução Rápida (CLI)
 
 Rode diretamente pelo terminal passando parâmetros:
 
@@ -52,24 +52,24 @@ Rode diretamente pelo terminal passando parâmetros:
 go run . -file coordinates/wi29.tsp -ants 100 -iter 500
 ```
 
-### 2\. Experimentos em Batch (JSON)
+### 2. Experimentos em Batch (JSON)
 
 Para testar múltiplos parâmetros de uma vez (Grid Search), crie um arquivo `config.json`:
 
 ```json
 {
-  "experiment_name": "Teste_Grid",
-  "input_file": ["coordinates/wi29.tsp"],
-  "num_ants": [50, 100],
-  "iterations": [200],
-  "alpha": [1.0],
-  "beta": [2.0, 5.0],
-  "evaporation": [0.1],
-  "q": [100.0],
-  "knn_size": [20],
-  "use_knn": [true],
-  "roulette_selection": [true],
-  "seed": 0
+    "experiment_name": "Teste_Grid",
+    "input_file": ["coordinates/wi29.tsp"],
+    "num_ants": [50, 100],
+    "iterations": [200],
+    "alpha": [1.0],
+    "beta": [2.0, 5.0],
+    "evaporation": [0.1],
+    "q": [100.0],
+    "knn_size": [20],
+    "use_knn": [true],
+    "roulette_selection": [true],
+    "seed": 0
 }
 ```
 
@@ -79,7 +79,33 @@ Execute com:
 go run . -config config.json
 ```
 
------
+----- 
+
+### 3. Modo Híbrido (CLI + Config)
+
+É possível combinar um arquivo de configuração com flags na linha de comando. Regras principais:
+
+- Flags em CLI têm precedência sobre valores correspondentes em `config.json` (sobrescrevem).
+- Flags que recebem uma lista (ex.: -iter "100,200") são interpretadas como múltiplos valores e participam do Grid Search (produto cartesiano com listas do config).
+- Flags com um único valor (ex.: -ants 100) substituem aquele parâmetro em todas as execuções geradas pelo config.
+
+Exemplos:
+
+- Sobrescrever um valor simples:
+```bash
+go run . -config config.json -ants 100
+```
+(Irá usar `ants=100` para todas as execuções definidas pelo config.)
+
+- Forçar múltiplos valores via CLI (expande o grid):
+```bash
+go run . -config config.json -ants 100 -iter "100,200"
+```
+(Irá combinar o `config.json` com `ants=100` e `iterations` em {100,200}, gerando execuções para cada combinação.)
+
+Observação: sempre coloque listas entre aspas para evitar interpretação da shell (ex.: "100,200").  
+
+----- 
 
 ## 🌍 Datasets (.tsp)
 

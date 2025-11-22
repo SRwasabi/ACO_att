@@ -134,7 +134,7 @@ func buildInitialPheromoneMatrix(size int, Rng *rand.Rand) [][]float64 {
 		for j := i + 1; j < size; j++ {
 			value := Rng.Float64()
 			
-			while value == 0.0 || value == 1.0 {
+			for value == 0.0 || value == 1.0 {
 				value = Rng.Float64()
 			}
 			matrix[i][j] = value
