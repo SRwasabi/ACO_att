@@ -35,8 +35,9 @@ func (m MatrixConfig) Expand() []RunConfig {
 	for _, useK := range m.UseKNN {
 	for _, roul := range m.RouletteSelection {
 		
-		name := fmt.Sprintf("%s_Ants%d_Alpha%.1f_Beta%.1f", m.ExperimentName, ants, a, b)
-		
+		name := fmt.Sprintf("%s_Ants%d_Iter%d_Alpha%.2f_Beta%.2f_Evap%.2f_Q%.2f_KNN%d_UseKNN%t_Roulette%t_Seed%d", 
+			m.ExperimentName, ants, iter, a, b, e, q, k, useK, roul, m.Seed)
+
 		if len(m.InputFile) > 1 {
 			name = fmt.Sprintf("%s_%s", name, file)
 		}
