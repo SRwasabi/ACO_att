@@ -153,7 +153,7 @@ Após a execução, uma pasta `NomeDoExperimento_Results/` será criada com:
 Projeto desenvolvido com ❤️ por:
 
   * **[SRwasabi](https://github.com/SRwasabi)**
-  * **[DainSlash](https://github.com/DainSlash)**
+  * **[Felipe Camarano](https://github.com/FelipeCamarano)**
   * **[Felipe Camarano](https://github.com/FelipeCamaranoInpulso)**
 
 -----
